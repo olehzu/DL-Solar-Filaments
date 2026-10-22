@@ -1,5 +1,0 @@
-# Only needed for the smoke test in tests/ (headless notebook execution on synthetic data)
-nbformat>=5.7
-nbconvert>=7.0
-ipykernel>=6.0
-pytest>=7.0
