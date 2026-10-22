@@ -1,0 +1,45 @@
+# ---- Data (never commit; competition data is licensed for non-commercial/academic use only) ----
+data/
+filament-segmentation-2026/
+MAGFiLO*/
+dl/
+cache/
+*.jpeg
+*.jpg
+*.png
+# Figures for the report may be allowed later, e.g.:
+# !docs/**/*.png
+
+# ---- Local-only material (originals, moved files) ----
+_not_for_git/
+
+# ---- Run outputs, caches, weights ----
+outputs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.npy
+*.npz
+
+# ---- Archives ----
+*.zip
+*.tar
+*.tar.gz
+
+# ---- Credentials ----
+kaggle.json
+.kaggle/
+.env
+
+# ---- Python / Jupyter / environments ----
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# ---- OS ----
+.DS_Store
