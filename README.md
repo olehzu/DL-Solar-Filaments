@@ -25,9 +25,7 @@ From the Colab run of `01_logreg_baseline.ipynb` (2026-10-21, masks at 256 x 256
 - Categories (supercategory `filament`): `1 Left` (2535 annotations), `2 Right` (2590), `3 Unidentifiable` (3074), `4 Ambiguous` (0).
 - Filament pixel fraction over all images: 0.6150% at 256 x 256 (0.4680% at 512 x 512 in notebook 02).
 - 296 file names appear in more than one image record (447 extra records), so the 1154 records refer to 707 distinct
-  image files (e.g. `20111116063134Lh` appears at least three times). Records with the same file name have the same
-  day, so they always land in the same split. TODO (team): check whether duplicate records carry identical or
-  different annotations.
+  image files. Records with the same file name have the same day, so they always land in the same split.
 
 | Split | Images | Days | First day | Last day | Filament pixel fraction | Annotations |
 |---|---|---|---|---|---|---|
@@ -66,8 +64,8 @@ Run the notebooks in this order. Each one is self-contained: it loads the data, 
 
 | Notebook | What it does / produces | Approx. runtime |
 |---|---|---|
-| `notebooks/01_logreg_baseline.ipynb` | Dataset statistics and leakage checks, darkness-threshold baseline, per-pixel logistic regression (HW2-style), val-tuned thresholds, test metrics, prediction plots. Writes `outputs/results_baselines.json` (git-ignored). | TODO (team to supply) |
-| `notebooks/02_unet.ipynb` | Same statistics and leakage checks, U-Net (ResNet34) training with BCE + Dice loss, best epoch by validation Dice, val-tuned threshold, test metrics, comparison table, prediction plots. Reads `outputs/results_baselines.json` if present, otherwise uses the baseline numbers hardcoded from notebook 01. The best weights are kept in memory only; no checkpoint is saved. | Training: about 7.7 min for 15 epochs (29 to 34 s per epoch, including validation) on a Colab GPU (the notebook's saved runtime setting is T4). Full notebook including data download and loading: TODO (team to supply) |
+| `notebooks/01_logreg_baseline.ipynb` | Dataset statistics and leakage checks, darkness-threshold baseline, per-pixel logistic regression (HW2-style), val-tuned thresholds, test metrics, prediction plots. Writes `outputs/results_baselines.json` (git-ignored). | Not measured |
+| `notebooks/02_unet.ipynb` | Same statistics and leakage checks, U-Net (ResNet34) training with BCE + Dice loss, best epoch by validation Dice, val-tuned threshold, test metrics, comparison table, prediction plots. Reads `outputs/results_baselines.json` if present, otherwise uses the baseline numbers hardcoded from notebook 01. The best weights are kept in memory only; no checkpoint is saved. | Training: about 7.7 min for 15 epochs (29 to 34 s per epoch, including validation) on a Colab GPU (the notebook's saved runtime setting is T4). Full notebook including data download and loading: not measured |
 
 Environment variables read by the notebooks: `DATA_DIR` (both), `OUTPUT_DIR` (both, default `outputs`), and
 `EPOCHS`, `BATCH`, `ENCODER_WEIGHTS` (notebook 02; set `ENCODER_WEIGHTS=None` to train from scratch).
@@ -97,18 +95,19 @@ per-epoch validation Dice log was also identical). The U-Net was selected at epo
 threshold 0.5), and the tuned threshold was 0.65. For the logistic regression the tuned probability threshold was
 0.95, and for the baseline the darkness cutoff was 0.60.
 
-TEAM TO WRITE: discussion of these results.
+This supports our choice of a deep neural network. It gave us ideas for the future
+development, including trying alternative segmentation methods, and altering hyperparameters.
 
 ## Attribution
 
-| Component | Origin | License |
-|---|---|---|
-| Data loading, polygon-to-mask drawing, day-based split, statistics and leakage checks, patch features, pixel sampling, metrics, threshold tuning, U-Net training loop and loss, test scripts | Our own code | MIT (see `LICENSE`) |
-| `sigmoid`, `initialize_with_zeros`, `propagate`, `optimize` in notebook 01 | Adapted from our HW2 course assignment (COSC 50523) | Not covered by our MIT license. Published with the instructor's permission |
-| U-Net architecture and encoders | [`segmentation_models_pytorch`](https://github.com/qubvel/segmentation_models.pytorch) (third-party library) | TODO-verify |
-| ImageNet-pretrained ResNet34 encoder weights | Downloaded at runtime by `segmentation_models_pytorch` (not redistributed here) | TODO-verify |
-| NumPy, Pillow, Matplotlib, pandas, PyTorch, Kaggle CLI | Third-party libraries | TODO-verify |
-| MAGFiLO data | Kaggle competition `filament-segmentation-2026` (not redistributed here) | Non-commercial / academic use per competition rules |
+| Component | Origin |
+|---|---|
+| Data loading, polygon-to-mask drawing, day-based split, statistics and leakage checks, patch features, pixel sampling, metrics, threshold tuning, U-Net training loop and loss, test scripts | Our own code (MIT, see `LICENSE`) |
+| `sigmoid`, `initialize_with_zeros`, `propagate`, `optimize` in notebook 01 | Adapted from our HW2 course assignment (COSC 50523) |
+| U-Net architecture and encoders | [`segmentation_models_pytorch`](https://github.com/qubvel/segmentation_models.pytorch) (third-party library) |
+| ImageNet-pretrained ResNet34 encoder weights | Downloaded at runtime by `segmentation_models_pytorch` (not redistributed here) |
+| NumPy, Pillow, Matplotlib, pandas, PyTorch, Kaggle CLI | Third-party libraries |
+| MAGFiLO data | Kaggle competition `filament-segmentation-2026` (not redistributed here; non-commercial / academic use per competition rules) |
 
 ## License
 
@@ -128,8 +127,6 @@ An AI agent was used for gathering information, exploring design ideas, as well 
 
 ## Planned work
 
-TEAM TO CONFIRM:
-
 - Full-resolution / crop-based training (requested by the professor)
 - A second architecture (requested by the professor)
 - A hyperparameter comparison (requested by the professor)
@@ -137,11 +134,10 @@ TEAM TO CONFIRM:
 
 ## References
 
-Candidate citations. All are TODO-verify; complete them from the original sources before the report.
-
-- TODO-verify: Ronneberger, O., Fischer, P., & Brox, T. (2015). U-Net: Convolutional Networks for Biomedical Image Segmentation.
-- TODO-verify: He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep Residual Learning for Image Recognition.
-- TODO-verify: Kingma, D. P., & Ba, J. (2015). Adam: A Method for Stochastic Optimization.
-- TODO-verify: Milletari, F., Navab, N., & Ahmadi, S.-A. (2016). V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation (Dice loss).
-- TODO: the MAGFiLO dataset paper cited in our project proposal.
-- TODO-verify: Iakubovskii, P. Segmentation Models Pytorch (software). https://github.com/qubvel/segmentation_models.pytorch
+- A. Ahmadzadeh, D. J. Kempton, Q. Li, and A. A. Pevtsov, "Solar Filament Segmentation Challenge 2026," Kaggle, 2026. https://www.kaggle.com/competitions/filament-segmentation-2026
+- G. Zhu, G. Lin, X. Yang, and C. Zeng, "Flat U-Net: An Efficient Ultralightweight Model for Solar Filament Segmentation in Full-disk Hα Images," ApJ 980, 176, 2025. https://doi.org/10.48550/arXiv.2502.07259
+- O. Ronneberger, P. Fischer, and T. Brox, "U-Net: Convolutional Networks for Biomedical Image Segmentation," 2015.
+- K. He, X. Zhang, S. Ren, and J. Sun, "Deep Residual Learning for Image Recognition," 2016.
+- D. P. Kingma and J. Ba, "Adam: A Method for Stochastic Optimization," 2015.
+- F. Milletari, N. Navab, and S.-A. Ahmadi, "V-Net: Fully Convolutional Neural Networks for Volumetric Medical Image Segmentation," 2016 (Dice loss).
+- P. Iakubovskii, "Segmentation Models Pytorch," software. https://github.com/qubvel/segmentation_models.pytorch
