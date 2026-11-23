@@ -15,11 +15,15 @@ memory. Two U-Nets are trained one after the other, `resized_512` and `crops_204
 optimizer, augmentation and number of training steps, and both are scored against masks at 2048 x 2048 and at 512 x 512.
 We have not timed a full run on Colab yet. Our rough guess is an hour or more on a T4.
 
-Outputs go to `outputs/`, which git ignores: the best weights of each run, `results_<run>.json` with the
-configuration and metrics, `comparison_test.csv`, `recall_by_width.csv`, `curves.png` and `qualitative_test.png`.
-Colab deletes them when the session ends, so set `OUTPUT_DIR` to a Google Drive folder if you want to keep them. With
-`REUSE_WEIGHTS=1` the notebook loads saved weights and only evaluates. The other settings that can be changed through
-environment variables are listed at the top of the notebook.
+The notebook writes the best weights of each run, `results_<run>.json` with the configuration and metrics,
+`comparison_test.csv`, `recall_by_width.csv`, `curves.png` and `qualitative_test.png`. On Colab the first cell mounts
+Google Drive and puts all of it in `MyDrive/DL-Solar-Filaments/outputs`, because Colab deletes `/content` when the
+session ends and the files are git-ignored. Outside Colab they go to `outputs/`. A checkpoint is saved after every epoch.
+If the session drops, run the notebook again from the top. Finished runs are skipped, and the interrupted one continues
+after its last saved epoch with the same crops it would have drawn anyway. A checkpoint is only resumed when the run's
+settings match, so give each new configuration its own name in `RUNS`. `RESUME=0` starts over, `SAVE_TO_DRIVE=0` keeps
+everything local, and `REUSE_WEIGHTS=1` loads saved weights and only evaluates. The other settings are listed at the
+top of the notebook.
 
 To run it locally you need Python 3.9 or newer with numpy, pillow, matplotlib, pandas, torch (2.3 or newer) and
 segmentation-models-pytorch. We checked it with Python 3.13, torch 2.15 and segmentation-models-pytorch 0.6.0. On macOS
