@@ -43,3 +43,6 @@ venv/
 
 # ---- OS ----
 .DS_Store
+
+# ---- Committed run results (small files only: metrics, curves; no weights, no solar images) ----
+!results/**/curves.png
