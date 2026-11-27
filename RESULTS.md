@@ -1,7 +1,8 @@
-# Results: full-resolution training (part 1) and a second architecture (part 2)
+# Results: full-resolution training (part 1), a second architecture (part 2) and hyperparameters (part 3)
 
-This file summarizes what notebook 03 (`notebooks/03_unet_crops.ipynb`) found for parts 1 and 2 of the plan in our
-midterm report. Part 3 (hyperparameter comparison) is still to come.
+This file summarizes what notebook 03 (`notebooks/03_unet_crops.ipynb`) found for the three parts of the plan in our
+midterm report. Parts 1 and 2 are described first; part 3 (UNet++ with different hyperparameters) has its own section
+further down.
 
 ## What we tested
 
@@ -101,30 +102,108 @@ slightly worse overall but misses the fewest filaments and is the fastest crop m
 thinnest filaments. The three ResNet34 models are all within about 0.02 Dice of each other, so with this encoder and
 training setup the choice of decoder changes little, and single-seed differences this small may be noise.
 
+## Part 3: UNet++ with different hyperparameters
+
+UNet++ had the best pooled scores in part 2, so part 3 trains it again with one setting changed at a time and compares
+each run with `unetpp_crops_2048` from part 2. Everything not listed is unchanged (crops of 512 x 512 from the 2048
+image, Adam, batch 8, 15 epochs, the same split, loss, augmentation, threshold tuning and test set).
+
+| Run | What changes against `unetpp_crops_2048` |
+|---|---|
+| `unetpp_pos025_crops_2048` | a quarter of the training crops placed on a filament instead of half (`pos_crop_prob` 0.5 to 0.25) |
+| `unetpp_pos0_crops_2048` | no crops placed on a filament, all positions random (`pos_crop_prob` 0) |
+| `unetpp_seed1_crops_2048` | only the training seed (1 instead of 42): weights of the new layers, crop positions, augmentation and batch order. The split is the same |
+| `unetpp_lr1e-4_crops_2048` | learning rate 1e-4 instead of 3e-4 |
+| `unetpp_lr1e-3_crops_2048` | learning rate 1e-3 instead of 3e-4 |
+
+The seed run changes no hyperparameter. It measures how much the scores move from training randomness alone, which is
+the yardstick for the other four.
+
+### Results on the test set
+
+| Run | IoU @2048 | Dice @2048 | Precision @2048 | Recall @2048 | IoU @512 | Dice @512 | Val Dice @2048 | Best epoch | Threshold |
+|---|---|---|---|---|---|---|---|---|---|
+| `unetpp_crops_2048` (part 2) | 0.5269 | 0.6902 | 0.6585 | **0.7251** | **0.5370** | **0.6988** | - | - | 0.50 |
+| `unetpp_pos025_crops_2048` | **0.5276** | **0.6908** | **0.6667** | 0.7166 | 0.5360 | 0.6979 | **0.6956** | 12 | 0.50 |
+| `unetpp_pos0_crops_2048` | 0.5207 | 0.6848 | 0.6610 | 0.7105 | 0.5357 | 0.6977 | 0.6909 | 15 | 0.60 |
+| `unetpp_seed1_crops_2048` | 0.5159 | 0.6807 | 0.6476 | 0.7172 | 0.5242 | 0.6878 | 0.6910 | 15 | 0.65 |
+| `unetpp_lr1e-4_crops_2048` | 0.5217 | 0.6857 | 0.6628 | 0.7103 | 0.5305 | 0.6933 | 0.6916 | 7 | 0.50 |
+| `unetpp_lr1e-3_crops_2048` | 0.5114 | 0.6768 | 0.6430 | 0.7142 | 0.5211 | 0.6851 | 0.6815 | 7 | 0.45 |
+
+### Recall by filament width
+
+Same width groups as above (quartile edges 7.4, 9.2 and 12.0 px, 291 filaments each).
+
+| Run | < 7.4 px (thinnest) | 7.4 - 9.2 px | 9.2 - 12.0 px | > 12.0 px (thickest) | Filaments missed completely |
+|---|---|---|---|---|---|
+| `unetpp_crops_2048` (part 2) | 0.637 | 0.668 | 0.707 | 0.767 | 10.4 % |
+| `unetpp_pos025_crops_2048` | 0.668 | 0.672 | 0.721 | 0.741 | 8.2 % |
+| `unetpp_pos0_crops_2048` | 0.654 | 0.658 | 0.707 | 0.746 | 8.9 % |
+| `unetpp_seed1_crops_2048` | **0.686** | 0.678 | **0.731** | **0.769** | **4.9 %** |
+| `unetpp_lr1e-4_crops_2048` | **0.686** | **0.692** | 0.726 | 0.741 | 5.2 % |
+| `unetpp_lr1e-3_crops_2048` | 0.679 | 0.685 | 0.727 | 0.753 | 5.2 % |
+
+### What we found
+
+**Training randomness alone moves Dice by about 0.01.** The seed run has exactly the settings of `unetpp_crops_2048`
+and scores Dice @2048 0.681 against 0.690. All five part 3 runs land between 0.677 and 0.691, a spread only about 1.5
+times this seed difference. With one run per setting, none of the changes can be said to improve or hurt the model.
+
+**The thin-filament numbers move even more with the seed.** The seed run misses 4.9 % of the test filaments completely
+against 10.4 % for the part 2 run, and its recall on the thinnest group is 0.686 against 0.637. Differences of this
+size in parts 1 and 2 (for example UNet++ against the crop U-Net on thin filaments, or DeepLabV3+ missing the fewest
+filaments) should therefore be read as possible noise too. The part 1 gain from training on crops (thinnest-group
+recall 0.54 to 0.67, missed filaments 17.9 % to 7.0 %) is still larger than this.
+
+**Fewer filament-centred crops: no clear effect.** In part 1 we suspected that placing half of the crops on a filament
+causes extra false positives. For UNet++ this did not show up: precision is 0.659 with half the crops on filaments,
+0.667 with a quarter and 0.661 with none, all within noise. `pos_crop_prob` 0.25 gave the best pooled scores of part 3
+(Dice 0.691, IoU 0.528, precision 0.667, best validation Dice 0.696), but only 0.0006 Dice above the part 2 run. With
+no filament-centred crops at all, the first epochs were clearly worse (validation Dice 0.47 after epoch 1 against 0.64
+with a quarter), but after 15 epochs the model had caught up.
+
+**Learning rate: 3e-4 is a good choice; 1e-3 is too high.** Learning rate 1e-3 gave the lowest scores of part 3 (Dice
+0.677, precision 0.643, best validation Dice 0.682) and the most unstable training (validation Dice between 0.59 and
+0.68 from epoch to epoch). Learning rate 1e-4 is within noise of 3e-4 (Dice 0.686); its validation Dice peaked at
+epoch 7 and then drifted down while the training loss kept falling, so a lower learning rate did not need more than 15
+epochs. Both learning-rate runs and the seed run miss about 5 % of the filaments completely, so the 10.4 % of the part
+2 run looks like the unlucky one rather than a property of 3e-4.
+
+**Part 3 summary.** None of the five changes clearly beats the UNet++ settings from part 2. Within the ranges we
+tried, the share of filament-centred crops and a learning rate between 1e-4 and 3e-4 make no measurable difference,
+and 1e-3 is worse. The best part 3 run (`pos_crop_prob` 0.25, Dice @2048 0.691) is a reasonable final model, but its
+lead over the part 2 settings is not significant. The largest effect we measured in part 3 is the run-to-run noise,
+which means telling apart settings this close would need several training runs with different seeds per setting.
+
 ## Caveats
 
-- Every number comes from a single training run with one seed. Differences of about 0.01 Dice, such as UNet++ against
-  the crop U-Net, may be noise. The thin-filament gain from the crops (+0.13 recall) is large enough to take seriously.
+- Every number comes from a single training run per setting. The part 3 seed run shows that training randomness alone
+  moves Dice @2048 by about 0.01 and the share of filaments missed completely by about 5 percentage points, so
+  differences of that size between any two runs in this file may be noise. The thin-filament gain from the crops
+  (+0.13 recall) is larger than that.
 - The crop run differs from `resized_512` in two ways at once: the resolution and the rule that puts half of the crops
   on a filament.
-- UNet++ and DeepLabV3+ use the learning rate, loss and number of epochs chosen for the U-Net.
+- UNet++ and DeepLabV3+ use the learning rate, loss and number of epochs chosen for the U-Net. Part 3 checks the
+  learning rate and crop sampling for UNet++ only, one setting at a time, so interactions between settings are not
+  tested.
+- `unetpp_lr1e-4_crops_2048` (from epoch 6) and `unetpp_lr1e-3_crops_2048` ran in a second Colab session, after the
+  first one hit the GPU limit. Their scores are comparable with the other runs (same notebook, data, split, settings
+  and type of GPU), but their timings are not: in that session every epoch took about 350 s instead of 308 s,
+  including the epochs of `unetpp_lr1e-4_crops_2048` that resumed from its epoch-5 checkpoint, so the slowdown came
+  from the session and not from the learning rate. Train time and test time per image are therefore left out of the
+  part 3 comparison.
 - Flat U-Net is the only model trained from scratch, and 15 epochs at learning rate 3e-4 is far less training than the
   paper used. Its numbers say how it does under our budget, not how good the architecture can be.
 - The scores come from our own test split, not from the Kaggle leaderboard.
-
-## Still to run
-
-- `flatunet_lr1e-3_crops_2048` (Flat U-Net with the paper's learning rate of 1e-3) is set up in notebook 03 but not
-  trained yet. Given how far `flatunet_crops_2048` was from converging, a run with more epochs would say more than the
-  learning rate alone.
-- Part 3 can start from `crops_2048`. A useful first run is `crops_2048` with `pos_crop_prob=0.0`, which shows whether
-  the filament-focused crops cause the extra false positives.
 
 ## Where the numbers come from
 
 The weights and result files are in `MyDrive/DL-Solar-Filaments/outputs` (git-ignored, not in this repository):
 `results_<run>.json` holds the configuration, training history, thresholds, test metrics and per-filament recall of
 each run. The recall-by-width groups use the same quartile edges as the notebook's `recall_by_width.csv`.
+
+For the five part 3 runs, `results_<run>.json` is in this repository under [`results/<run>/`](results/). They ran on a
+Tesla T4 in Colab with the same software versions as below, using notebook 03 from the `part3-unetpp-grid` branch.
 
 For `deeplabv3p_crops_2048` and `flatunet_crops_2048` the result files are also in this repository, under
 [`results/<run>/`](results/): `results_<run>.json`, `comparison_test.csv`, `recall_by_width.csv` and `curves.png` (train
