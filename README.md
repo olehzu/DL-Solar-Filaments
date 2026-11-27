@@ -36,12 +36,13 @@ segmentation-models-pytorch. We checked it with Python 3.13, torch 2.15 and segm
 and Windows the DataLoaders run in the main process (`NUM_WORKERS=0`), because Jupyter there cannot pass classes
 defined in a notebook to worker processes.
 
-Results of the runs so far (parts 1 and 2 of the plan) are summarized in [`RESULTS.md`](RESULTS.md).
+Results of the runs so far (parts 1 and 2 of the plan) are summarized in [`RESULTS.md`](RESULTS.md). The metric files
+and training curves of the DeepLabV3+ and Flat U-Net runs are in [`results/`](results/).
 
 ## Planned work
 
 - Full-resolution / crop-based training (notebook 03, done, see `RESULTS.md`)
-- A second architecture: UNet++ done (see `RESULTS.md`). DeepLabV3+ and Flat U-Net are implemented in notebook 03 but
-  not trained yet
+- A second architecture: UNet++, DeepLabV3+ and Flat U-Net done (see `RESULTS.md`, result files in `results/`). The
+  optional Flat U-Net run with learning rate 1e-3 is not trained yet
 - A hyperparameter comparison
 - A disc mask for the darkness-threshold baseline
